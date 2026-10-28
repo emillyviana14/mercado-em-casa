@@ -1,0 +1,1644 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mercado em Casa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: coluna única de app (max 760px), etiqueta amarela de gôndola como marca, lista com divisórias em vez de cards */
+:root {
+  --bg: #EEF2EF;
+  --surface: #FFFFFF;
+  --surface-2: #F6F8F7;
+  --ink: #16201B;
+  --muted: #5B6862;
+  --line: #D5DDD8;
+  --tag: #FFD21F;
+  --tag-ink: #1A1A12;
+  --bad: #B42318;
+  --bad-bg: #FDECEA;
+  --warn: #8F5400;
+  --warn-bg: #FFF1CC;
+  --ok: #2B6E47;
+  --ok-bg: #E3F2E9;
+  --focus: #1F6FEB;
+  --shadow: 0 1px 2px rgb(22 32 27 / .06), 0 8px 24px rgb(22 32 27 / .06);
+  --f-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1412; --surface: #171E1A; --surface-2: #1C2420; --ink: #E6ECE8; --muted: #97A59E;
+    --line: #2A3530; --tag: #FFD21F; --tag-ink: #1A1A12; --bad: #FF8A80; --bad-bg: #3A1714;
+    --warn: #FFC266; --warn-bg: #362709; --ok: #7FD3A0; --ok-bg: #12301F; --focus: #6EA8FE;
+    --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1412; --surface: #171E1A; --surface-2: #1C2420; --ink: #E6ECE8; --muted: #97A59E;
+  --line: #2A3530; --tag: #FFD21F; --tag-ink: #1A1A12; --bad: #FF8A80; --bad-bg: #3A1714;
+  --warn: #FFC266; --warn-bg: #362709; --ok: #7FD3A0; --ok-bg: #12301F; --focus: #6EA8FE;
+  --shadow: 0 1px 2px rgb(0 0 0 / .3), 0 8px 24px rgb(0 0 0 / .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 15px;
+  line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 72px;
+}
+.app { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Cabeçalho */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.tag-mark {
+  background: var(--tag); color: var(--tag-ink);
+  font-family: var(--f-display); font-weight: 700; text-transform: uppercase;
+  font-size: 26px; line-height: 1; letter-spacing: .02em;
+  padding: 8px 14px 7px 18px; border-radius: 4px;
+  position: relative;
+}
+.tag-mark::before {
+  content: ""; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px;
+  margin-top: -3px; border-radius: 50%; background: var(--bg);
+}
+.today { color: var(--muted); font-size: 13px; text-transform: capitalize; }
+.top-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+
+/* Sincronização */
+.sync {
+  display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--surface-2);
+  padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted);
+}
+.sync::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.sync.ok { color: var(--ok); background: var(--ok-bg); }
+.sync.warn { color: var(--warn); background: var(--warn-bg); }
+.sync.bad { color: var(--bad); background: var(--bad-bg); }
+.casa-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.escolha { background: var(--warn-bg); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.escolha p { color: var(--ink); }
+.msg-erro { color: var(--bad) !important; font-size: 13px; }
+.stack .hint { font-size: 12px; }
+
+/* Resumo */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; text-align: left;
+  cursor: pointer;
+}
+.stat:hover { border-color: var(--muted); }
+.stat b { font-family: var(--f-display); font-size: 30px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+.stat.bad b { color: var(--bad); }
+.stat.warn b { color: var(--warn); }
+.stat.buy b { background: var(--tag); color: var(--tag-ink); border-radius: 3px; padding: 0 6px; align-self: flex-start; }
+.stat.zero b { color: var(--muted); background: none; padding: 0; }
+
+/* Abas */
+.tabs { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.tab {
+  flex: 1; border: 0; background: none; padding: 9px 8px; border-radius: 7px; cursor: pointer;
+  font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.count { font-size: 12px; background: var(--tag); color: var(--tag-ink); border-radius: 999px; padding: 0 7px; font-variant-numeric: tabular-nums; }
+
+/* Banner de exemplo */
+.banner {
+  display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap;
+  background: var(--warn-bg); color: var(--ink); border-radius: 10px; padding: 10px 14px; font-size: 14px;
+}
+.banner p { margin: 0; flex: 1 1 260px; }
+.banner .row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Controles */
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.search { flex: 1 1 220px; min-width: 0; }
+input[type="search"], input[type="text"], input[type="number"], input[type="date"], select, textarea {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%;
+}
+textarea { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; min-height: 120px; resize: vertical; }
+.toolbar select { width: auto; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px;
+  font-size: 13px; cursor: pointer; color: var(--muted);
+}
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 9px 14px;
+  font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--tag); color: var(--tag-ink); border-color: transparent; }
+.btn.primary:hover { filter: brightness(.96); }
+.btn.danger { color: var(--bad); }
+.btn[data-armed] { background: var(--bad); color: #fff; border-color: transparent; }
+.btn.small { padding: 6px 10px; font-size: 13px; }
+
+/* Lista */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.panel-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.panel-head h2 { margin: 0; font-family: var(--f-display); font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.panel-head small { color: var(--muted); }
+.list { list-style: none; margin: 0; padding: 0; }
+.item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px 14px; align-items: center;
+  padding: 12px 16px; border-top: 1px solid var(--line);
+}
+.list > .item:first-child { border-top: 0; }
+.item-info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.item-name { font-weight: 600; overflow-wrap: anywhere; }
+.item-meta { font-size: 13px; color: var(--muted); }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { font-size: 12px; font-weight: 600; border-radius: 4px; padding: 1px 7px; }
+.badge.bad { background: var(--bad-bg); color: var(--bad); }
+.badge.warn { background: var(--warn-bg); color: var(--warn); }
+.badge.ok { background: var(--ok-bg); color: var(--ok); }
+.badge.buy { background: var(--tag); color: var(--tag-ink); }
+
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stepper button { border: 0; background: var(--surface-2); width: 34px; height: 34px; font-size: 18px; cursor: pointer; }
+.stepper button:hover { background: var(--line); }
+.stepper output { min-width: 72px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; padding: 0 6px; font-size: 14px; }
+.stepper output small { color: var(--muted); font-weight: 500; }
+
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 10px; align-items: center; }
+
+/* Lista de compras */
+.buy-row { grid-template-columns: minmax(0, 1fr) auto; }
+.buy-act { display: flex; gap: 6px; align-items: center; }
+.buy-act input { width: 76px; padding: 6px 8px; text-align: right; }
+.buy-act .unit { font-size: 13px; color: var(--muted); min-width: 28px; }
+.extra-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+.extra-row input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--ok); }
+.extra-row.done .item-name { text-decoration: line-through; color: var(--muted); }
+.add-extra { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+.add-extra input { min-width: 0; }
+
+/* Backup */
+.stack { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+.stack p { margin: 0; color: var(--muted); max-width: 62ch; }
+.stack h3 { margin: 0; font-size: 15px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+/* Diálogo */
+dialog {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px;
+  width: min(540px, calc(100% - 32px)); padding: 0; box-shadow: var(--shadow);
+}
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+.dlg-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.dlg-head h2 { margin: 0; font-family: var(--f-display); font-size: 22px; text-transform: uppercase; letter-spacing: .03em; }
+.close { border: 0; background: none; font-size: 22px; cursor: pointer; color: var(--muted); width: 36px; height: 36px; border-radius: 8px; }
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.field .hint { font-size: 12px; color: var(--muted); }
+.qty-pair { display: grid; grid-template-columns: 1fr 96px; gap: 6px; }
+.dlg-foot { display: flex; justify-content: space-between; gap: 8px; padding: 12px 18px 16px; flex-wrap: wrap; }
+.dlg-foot .row { margin-left: auto; }
+.err { color: var(--bad); font-size: 13px; grid-column: 1 / -1; margin: 0; }
+
+/* Toast */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%) translateY(20px);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px;
+  opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Estado da embalagem: selo com marcador de nível, um toque troca */
+.nivel {
+  display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface);
+  border-radius: 4px; padding: 1px 7px 1px 5px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--muted); --n: 100%;
+}
+.nivel i { width: 18px; height: 9px; border: 1.5px solid currentColor; border-radius: 2px; position: relative; overflow: hidden; flex: none; }
+.nivel i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--n); background: currentColor; }
+.nivel[data-e="aberto"] { --n: 75%; color: var(--ok); }
+.nivel[data-e="metade"] { --n: 50%; color: var(--warn); }
+.nivel[data-e="acabando"] { --n: 15%; color: var(--bad); border-color: currentColor; }
+.muted { color: var(--muted); }
+
+/* Carrinho e comparativo */
+.cart-form {
+  display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) 104px 72px auto; gap: 8px; align-items: end;
+  padding: 12px 16px; border-bottom: 1px solid var(--line);
+}
+.money { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.cart-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.cart-foot {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap;
+  padding: 12px 16px; border-top: 1px solid var(--line); background: var(--surface-2);
+}
+.total { font-family: var(--f-display); font-size: 30px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--ok); }
+.cmp-resumo { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.cmp-resumo p { margin: 0; max-width: 64ch; }
+.cmp-wrap { overflow-x: auto; border-top: 1px solid var(--line); }
+table.cmp { border-collapse: collapse; width: 100%; font-size: 14px; }
+.cmp th, .cmp td { padding: 8px 12px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cmp th:first-child, .cmp td:first-child { text-align: left; white-space: normal; min-width: 130px; }
+.cmp thead th { border-top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.cmp td.melhor span { background: var(--ok-bg); color: var(--ok); border-radius: 4px; padding: 1px 6px; font-weight: 700; }
+.cmp td.falta { color: var(--muted); }
+.cmp tfoot td { font-weight: 700; background: var(--surface-2); }
+.cmp tfoot small { display: block; font-weight: 500; color: var(--muted); font-size: 11px; }
+.cmp tfoot td.barato { color: var(--ok); }
+details.hist > summary { cursor: pointer; padding: 12px 16px; font-weight: 600; }
+details.hist[open] > summary { border-bottom: 1px solid var(--line); }
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .cart-form { grid-template-columns: 1fr 1fr; }
+  .cart-form .c-item { grid-column: 1 / -1; }
+  .cart-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .tab { padding: 9px 4px; font-size: 14px; }
+  .item { grid-template-columns: minmax(0, 1fr) auto; }
+  .item .stepper { grid-column: 1; justify-self: start; }
+  .form { grid-template-columns: 1fr; }
+  .tag-mark { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="tag-mark">Mercado em Casa</div>
+    </div>
+    <div class="top-right">
+      <div class="today" id="today"></div>
+      <button class="sync" id="sync" data-act="ir-casa" hidden></button>
+    </div>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Resumo"></section>
+
+  <div id="banner"></div>
+
+  <nav class="tabs" role="tablist" aria-label="Seções">
+    <button class="tab" role="tab" id="tab-despensa" data-act="tab" data-aba="despensa" aria-selected="true">Despensa</button>
+    <button class="tab" role="tab" id="tab-lista" data-act="tab" data-aba="lista" aria-selected="false">Lista <span class="count" id="tab-count" hidden></span></button>
+    <button class="tab" role="tab" id="tab-carrinho" data-act="tab" data-aba="carrinho" aria-selected="false">Carrinho</button>
+    <button class="tab" role="tab" id="tab-backup" data-act="tab" data-aba="backup" aria-selected="false">Casa</button>
+  </nav>
+
+  <main>
+    <section id="aba-despensa">
+      <div class="toolbar" style="margin-bottom:10px">
+        <input class="search" type="search" id="busca" placeholder="Buscar item ou categoria" aria-label="Buscar">
+        <select id="ordem" aria-label="Ordenar">
+          <option value="validade">Vence primeiro</option>
+          <option value="nome">Nome (A–Z)</option>
+          <option value="categoria">Categoria</option>
+          <option value="qtd">Menor quantidade</option>
+        </select>
+        <button class="btn primary" data-act="add">+ Adicionar item</button>
+      </div>
+      <div class="chips" id="chips-local" style="margin-bottom:12px"></div>
+      <div class="panel">
+        <div class="panel-head"><h2 id="titulo-local">Tudo em casa</h2><small id="total-filtrado"></small></div>
+        <ul class="list" id="lista-itens"></ul>
+      </div>
+    </section>
+
+    <section id="aba-lista" hidden>
+      <div class="toolbar" style="margin-bottom:12px">
+        <p style="margin:0;color:var(--muted);flex:1 1 260px">Entra aqui todo item que chegou no estoque mínimo. Ao marcar <b>Comprei</b>, a quantidade volta para a despensa.</p>
+        <button class="btn" data-act="copiar-lista">Copiar lista</button>
+      </div>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><h2>Acabando</h2><small id="lista-auto-total"></small></div>
+        <ul class="list" id="lista-auto"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Avulsos</h2><small>itens que você não controla no estoque</small></div>
+        <ul class="list" id="lista-extras"></ul>
+        <form class="add-extra" id="form-extra">
+          <input type="text" id="extra-texto" placeholder="Ex.: pilhas AA, vela de aniversário" aria-label="Novo item avulso" maxlength="80">
+          <button class="btn" type="submit">Adicionar</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="aba-carrinho" hidden>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><h2>Carrinho</h2><small id="cart-resumo"></small></div>
+        <form class="cart-form" id="form-cart" novalidate>
+          <div class="field c-item"><label for="k-item">Item</label><input type="text" id="k-item" list="dl-itens" maxlength="80" autocomplete="off" placeholder="Ex.: Café torrado 500 g"></div>
+          <div class="field"><label for="k-mercado">Mercado</label><input type="text" id="k-mercado" list="dl-mercados" maxlength="40" autocomplete="off" placeholder="Ex.: Atacadão"></div>
+          <div class="field"><label for="k-valor">Preço (R$)</label><input type="text" id="k-valor" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+          <div class="field"><label for="k-qtd">Qtd</label><input type="number" id="k-qtd" min="0" step="any" inputmode="decimal" value="1"></div>
+          <button class="btn primary" type="submit">Adicionar</button>
+          <p class="err" id="k-erro" hidden></p>
+        </form>
+        <datalist id="dl-itens"></datalist>
+        <datalist id="dl-mercados"></datalist>
+        <ul class="list" id="lista-cart"></ul>
+        <div class="cart-foot" id="cart-foot" hidden>
+          <div><small class="muted">Total </small><span class="total" id="cart-total"></span></div>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="k-somar" checked> Somar na despensa</label>
+            <button class="btn primary" id="btn-fechar" data-act="fechar-compra">Fechar compra</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><h2>Onde sai mais barato</h2><small>último preço anotado em cada mercado</small></div>
+        <div class="cmp-resumo">
+          <div class="chips" id="cmp-modo"></div>
+          <div id="cmp-texto"></div>
+        </div>
+        <div class="cmp-wrap" id="cmp-tabela"></div>
+      </div>
+
+      <div class="panel">
+        <details class="hist" id="hist">
+          <summary>Histórico de preços <small class="muted" id="hist-total"></small></summary>
+          <ul class="list" id="lista-hist"></ul>
+        </details>
+      </div>
+    </section>
+
+    <section id="aba-backup" hidden>
+      <div class="panel" style="margin-bottom:14px">
+        <div class="panel-head"><h2>Compartilhar com a casa</h2><small id="casa-resumo"></small></div>
+
+        <div class="stack" id="casa-off">
+          <p>Conecte este aparelho ao servidor da casa para todo mundo usar a mesma despensa. O que você muda é salvo em poucos segundos, e os outros aparelhos recebem em até 1 minuto. Sem internet, o app continua funcionando e envia depois.</p>
+          <div class="casa-form">
+            <div class="field full">
+              <label for="c-url">Endereço do servidor</label>
+              <input type="text" id="c-url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://mercado-em-casa.seu-usuario.workers.dev">
+            </div>
+            <div class="field">
+              <label for="c-senha">Senha da casa</label>
+              <input type="password" id="c-senha" autocomplete="current-password">
+            </div>
+            <div class="field">
+              <label for="c-autor">Nome deste aparelho</label>
+              <input type="text" id="c-autor" maxlength="30" autocomplete="off" placeholder="Ex.: Emilly">
+              <span class="hint">Aparece no histórico de alterações.</span>
+            </div>
+          </div>
+          <p class="msg-erro" id="casa-erro" hidden></p>
+          <div class="row"><button class="btn primary" id="btn-conectar" data-act="conectar">Conectar</button></div>
+
+          <div class="escolha" id="casa-escolha" hidden>
+            <p id="escolha-txt"></p>
+            <div class="row">
+              <button class="btn primary" data-act="usar-casa">Usar a da casa</button>
+              <button class="btn" data-act="enviar-local">Enviar a deste aparelho</button>
+              <button class="btn" data-act="cancelar-conexao">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="stack" id="casa-on" hidden>
+          <p id="casa-info"></p>
+          <p class="msg-erro" id="casa-alerta" hidden></p>
+          <div class="row">
+            <button class="btn primary" data-act="sincronizar">Sincronizar agora</button>
+            <button class="btn" data-act="copiar-convite">Copiar link de convite</button>
+            <button class="btn danger" data-act="desconectar">Desconectar este aparelho</button>
+          </div>
+          <p class="hint">O convite leva o endereço e a senha da casa. Mande só para quem mora com você. A pessoa abre o link, confere os campos e toca em Conectar.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Seus dados</h2><small id="backup-resumo"></small></div>
+        <div class="stack">
+          <p id="backup-txt">Os itens ficam salvos só neste navegador. Para passar para outro celular, ou antes de limpar os dados do navegador, baixe um backup e importe do outro lado.</p>
+          <h3>Exportar</h3>
+          <div class="row">
+            <button class="btn primary" data-act="exportar">Baixar backup (.json)</button>
+            <button class="btn" data-act="copiar-json">Copiar texto do backup</button>
+          </div>
+          <textarea id="json-out" readonly aria-label="Texto do backup" placeholder="O texto do backup aparece aqui depois de exportar."></textarea>
+          <hr class="sep">
+          <h3>Importar</h3>
+          <p>Escolha um arquivo de backup ou cole o texto. A importação substitui tudo o que está aqui<span class="so-casa" hidden> e em todos os aparelhos da casa</span>.</p>
+          <input type="file" id="arquivo" accept=".json,application/json" aria-label="Arquivo de backup">
+          <textarea id="json-in" aria-label="Colar backup" placeholder="Cole aqui o texto de um backup"></textarea>
+          <div class="row"><button class="btn" id="btn-importar" data-act="importar">Importar backup</button></div>
+          <hr class="sep">
+          <h3>Recomeçar</h3>
+          <div class="row"><button class="btn danger" id="btn-apagar" data-act="apagar-tudo">Apagar todos os itens</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <form id="form-item" novalidate>
+    <div class="dlg-head">
+      <h2 id="dlg-title">Novo item</h2>
+      <button type="button" class="close" data-act="fechar" aria-label="Fechar">×</button>
+    </div>
+    <div class="form">
+      <div class="field full">
+        <label for="f-nome">Nome</label>
+        <input type="text" id="f-nome" maxlength="80" placeholder="Ex.: Arroz branco 5 kg" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-categoria">Categoria</label>
+        <select id="f-categoria"></select>
+      </div>
+      <div class="field">
+        <label for="f-local">Onde fica</label>
+        <select id="f-local"></select>
+      </div>
+      <div class="field">
+        <label for="f-qtd">Quantidade em casa</label>
+        <div class="qty-pair">
+          <input type="number" id="f-qtd" min="0" step="any" inputmode="decimal" value="1">
+          <select id="f-unidade" aria-label="Unidade"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="f-minimo">Estoque mínimo</label>
+        <input type="number" id="f-minimo" min="0" step="any" inputmode="decimal" value="1">
+        <span class="hint">Chegou nisso, vai para a lista de compras.</span>
+      </div>
+      <div class="field">
+        <label for="f-estado">Embalagem em uso</label>
+        <select id="f-estado"></select>
+        <span class="hint">Quase acabando conta como se aquela unidade já tivesse acabado.</span>
+      </div>
+      <div class="field">
+        <label for="f-validade">Validade</label>
+        <input type="date" id="f-validade">
+        <span class="hint">Opcional. Deixe em branco para itens que não vencem.</span>
+      </div>
+      <p class="err" id="f-erro" hidden></p>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn danger" id="btn-excluir" data-act="excluir" hidden>Excluir</button>
+      <div class="row">
+        <button type="button" class="btn" data-act="fechar">Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="nucleo">
+/*
+ * Núcleo sem DOM: formato dos dados, operações e o motor de sincronização.
+ *
+ * Toda alteração vira uma OPERAÇÃO ({t: "qtd", id: <item>, d: -1}) com uma
+ * chave única `k`, gerada pelo Motor.
+ * O que aparece na tela é sempre `aplicar(base, ops)`: a última versão vinda
+ * do servidor mais as operações que ainda não chegaram lá. Quando o servidor
+ * avisa que outro aparelho gravou antes (409), a base vira a versão nova e as
+ * MESMAS operações são reaplicadas por cima. Assim dois "−1" simultâneos no
+ * leite viram −2, e não um sobrescrevendo o outro.
+ *
+ * As chaves das operações já aplicadas ficam gravadas nos dados (`aplicadas`).
+ * Se a resposta de uma gravação se perde no caminho e o app reenvia, as
+ * operações repetidas são ignoradas, e o "−1" não vira "−2".
+ */
+var Nucleo = (function () {
+  "use strict";
+
+  var CATEGORIAS = ["Mercearia", "Hortifrúti", "Carnes e ovos", "Laticínios", "Padaria", "Bebidas", "Congelados", "Limpeza", "Higiene", "Pet", "Outros"];
+  var LOCAIS = ["Despensa", "Geladeira", "Freezer", "Área de serviço", "Banheiro"];
+  var UNIDADES = ["un", "kg", "g", "L", "ml", "pct", "cx", "dz", "lata", "rolo"];
+  var ESTADOS = ["fechado", "aberto", "metade", "acabando"];
+  var MAX_APLICADAS = 500;
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function arred(n) { return Math.round(n * 100) / 100; }
+  function num(v, def) { var n = parseFloat(String(v).replace(",", ".")); return isFinite(n) && n >= 0 ? arred(n) : def; }
+  function acha(lista, id) { for (var i = 0; i < lista.length; i++) if (lista[i].id === id) return lista[i]; return null; }
+  function vazio() { return { versao: 1, exemplo: false, items: [], extras: [], precos: [], aplicadas: [] }; }
+  function data(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s || "") ? s : ""; }
+  // Chave de comparação: "Café  Torrado" e "cafe torrado" são o mesmo produto.
+  function chave(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
+
+  function normalizar(d) {
+    d = d || {};
+    return {
+      versao: 1,
+      exemplo: !!d.exemplo,
+      items: (Array.isArray(d.items) ? d.items : []).filter(function (x) { return x && String(x.nome || "").trim(); }).map(function (x) {
+        return {
+          id: String(x.id || uid()),
+          nome: String(x.nome).trim().slice(0, 80),
+          categoria: CATEGORIAS.indexOf(x.categoria) >= 0 ? x.categoria : "Outros",
+          local: LOCAIS.indexOf(x.local) >= 0 ? x.local : "Despensa",
+          qtd: num(x.qtd, 0),
+          unidade: UNIDADES.indexOf(x.unidade) >= 0 ? x.unidade : "un",
+          minimo: num(x.minimo, 0),
+          validade: data(x.validade),
+          estado: ESTADOS.indexOf(x.estado) >= 0 ? x.estado : "fechado"
+        };
+      }),
+      extras: (Array.isArray(d.extras) ? d.extras : []).filter(function (x) { return x && String(x.texto || "").trim(); }).map(function (x) {
+        return { id: String(x.id || uid()), texto: String(x.texto).trim().slice(0, 80), feito: !!x.feito };
+      }),
+      precos: (Array.isArray(d.precos) ? d.precos : []).filter(function (x) {
+        return x && String(x.nome || "").trim() && String(x.mercado || "").trim() && num(x.valor, 0) > 0;
+      }).map(function (x) {
+        return {
+          id: String(x.id || uid()), nome: String(x.nome).trim().slice(0, 80), itemId: x.itemId ? String(x.itemId) : "",
+          mercado: String(x.mercado).trim().slice(0, 40), valor: num(x.valor, 0), qtd: num(x.qtd, 0) || 1,
+          data: data(x.data), carrinho: !!x.carrinho
+        };
+      }),
+      aplicadas: (Array.isArray(d.aplicadas) ? d.aplicadas : []).map(String).slice(-MAX_APLICADAS)
+    };
+  }
+
+  function aplicarUm(d, op) {
+    var it;
+    switch (op.t) {
+      case "item": // cria ou edita; editar um item que outro aparelho excluiu recria o item
+        it = acha(d.items, op.id);
+        if (it) Object.assign(it, op.campos, { id: it.id });
+        else d.items.push(Object.assign({}, op.campos, { id: op.id }));
+        break;
+      case "qtd":
+        it = acha(d.items, op.id);
+        if (!it) break;
+        var antes = num(it.qtd, 0);
+        it.qtd = arred(Math.max(0, antes + Number(op.d || 0)));
+        // acabou, ou voltou do zero: não há embalagem em uso
+        if (antes === 0 || it.qtd === 0) it.estado = "fechado";
+        break;
+      case "estado": it = acha(d.items, op.id); if (it) it.estado = op.valor; break;
+      case "preco-novo": if (!acha(d.precos, op.id)) d.precos.push(Object.assign({}, op.preco, { id: op.id })); break;
+      case "preco-del": d.precos = d.precos.filter(function (x) { return x.id !== op.id; }); break;
+      case "carrinho-fechar":
+        d.precos.forEach(function (x) { if ((op.ids || []).indexOf(x.id) >= 0) x.carrinho = false; });
+        break;
+      case "del": d.items = d.items.filter(function (x) { return x.id !== op.id; }); break;
+      case "extra-novo": if (!acha(d.extras, op.id)) d.extras.push({ id: op.id, texto: op.texto, feito: false }); break;
+      case "extra": it = acha(d.extras, op.id); if (it) it.feito = !!op.feito; break;
+      case "extra-del": d.extras = d.extras.filter(function (x) { return x.id !== op.id; }); break;
+      case "exemplo": d.exemplo = !!op.valor; break;
+      case "tudo":
+        var n = normalizar(op.dados);
+        d.items = n.items; d.extras = n.extras; d.exemplo = n.exemplo;
+        if (op.dados && Array.isArray(op.dados.precos)) d.precos = n.precos;
+        break;
+    }
+  }
+
+  function aplicar(base, ops) {
+    var d = normalizar(JSON.parse(JSON.stringify(base || vazio())));
+    var vistas = {};
+    d.aplicadas.forEach(function (id) { vistas[id] = 1; });
+    (ops || []).forEach(function (op) {
+      if (!op) return;
+      if (op.k) { if (vistas[op.k]) return; vistas[op.k] = 1; d.aplicadas.push(op.k); }
+      aplicarUm(d, op);
+    });
+    return normalizar(d);
+  }
+
+  // Texto curto para a mensagem do commit: "Leite -2, adicionou Ovos e mais 1"
+  function resumo(ops, base) {
+    var nomes = {}, deltas = {}, ordem = [];
+    (base.items || []).forEach(function (it) { nomes[it.id] = it.nome; });
+    (base.extras || []).forEach(function (x) { nomes[x.id] = x.texto; });
+    ops.forEach(function (op) {
+      if (op.t === "item" && op.campos && op.campos.nome) nomes[op.id] = op.campos.nome;
+      if (op.t === "extra-novo") nomes[op.id] = op.texto;
+      var nome = nomes[op.id] || "item", txt;
+      switch (op.t) {
+        case "qtd":
+          deltas[op.id] = arred((deltas[op.id] || 0) + Number(op.d || 0));
+          txt = "q:" + op.id; break;
+        case "item": txt = (acha(base.items || [], op.id) ? "editou " : "adicionou ") + nome; break;
+        case "del": txt = "excluiu " + nome; break;
+        case "extra-novo": txt = "lista: " + nome; break;
+        case "extra": txt = (op.feito ? "riscou " : "desmarcou ") + nome; break;
+        case "extra-del": txt = "tirou da lista " + nome; break;
+        case "exemplo": txt = "manteve o exemplo"; break;
+        case "tudo": txt = "substituiu a despensa"; break;
+        case "estado": txt = nome + " " + ({ fechado: "fechado", aberto: "aberto", metade: "pela metade", acabando: "acabando" }[op.valor] || ""); break;
+        case "preco-novo": txt = "carrinho: " + ((op.preco && op.preco.nome) || "item"); break;
+        case "preco-del": txt = "apagou um preco"; break;
+        case "carrinho-fechar": txt = "fechou a compra"; break;
+        default: return;
+      }
+      if (ordem.indexOf(txt) < 0) ordem.push(txt);
+    });
+    var partes = ordem.map(function (t) {
+      if (t.indexOf("q:") !== 0) return t;
+      var id = t.slice(2), d = deltas[id];
+      return d ? (nomes[id] || "item") + " " + (d > 0 ? "+" : "") + String(d).replace(".", ",") : null;
+    }).filter(Boolean);
+    if (!partes.length) return "sem mudanca";
+    return partes.length > 3 ? partes.slice(0, 3).join(", ") + " e mais " + (partes.length - 3) : partes.join(", ");
+  }
+
+  /*
+   * Comparativo de mercados. Para cada produto (pela `chave` do nome) vale o
+   * preço mais recente anotado em cada mercado. "Cesta comum" é o conjunto de
+   * produtos com preço em TODOS os mercados comparados: só nela o total de um
+   * mercado é comparável ao de outro.
+   */
+  function comparar(precos, alvos) {
+    var ultimo = {}, nomeMercado = {};
+    precos.forEach(function (p, i) {
+      var k = chave(p.nome), m = chave(p.mercado);
+      nomeMercado[m] = p.mercado;
+      ultimo[k] = ultimo[k] || {};
+      var atual = ultimo[k][m];
+      if (!atual || (p.data || "") > (atual.data || "") || ((p.data || "") === (atual.data || "") && i > atual.i)) {
+        ultimo[k][m] = { valor: p.valor, data: p.data, i: i };
+      }
+    });
+    var vistos = {}, linhas = [], semPreco = [];
+    alvos.forEach(function (a) {
+      var k = chave(a.nome);
+      if (!k || vistos[k]) return;
+      vistos[k] = 1;
+      if (ultimo[k]) linhas.push({ chave: k, nome: a.nome, precos: ultimo[k] }); else semPreco.push(a.nome);
+    });
+    var ms = {};
+    linhas.forEach(function (l) { Object.keys(l.precos).forEach(function (m) { ms[m] = 1; }); });
+    var mercados = Object.keys(ms).map(function (m) { return { chave: m, nome: nomeMercado[m], total: 0, n: 0, totalComum: 0 }; });
+    var comum = 0, combinacao = 0;
+    linhas.forEach(function (l) {
+      var melhor = null, todos = true;
+      mercados.forEach(function (m) {
+        var p = l.precos[m.chave];
+        if (!p) { todos = false; return; }
+        m.total = arred(m.total + p.valor); m.n++;
+        if (!melhor || p.valor < l.precos[melhor].valor) melhor = m.chave;
+      });
+      l.melhor = melhor;
+      l.comum = todos && mercados.length > 1;
+      combinacao = arred(combinacao + l.precos[melhor].valor);
+      if (l.comum) { comum++; mercados.forEach(function (m) { m.totalComum = arred(m.totalComum + l.precos[m.chave].valor); }); }
+    });
+    mercados.sort(function (a, b) { return (comum ? a.totalComum - b.totalComum : 0) || b.n - a.n || a.total - b.total; });
+    return { mercados: mercados, linhas: linhas, comum: comum, combinacao: combinacao, semPreco: semPreco };
+  }
+
+  /*
+   * Motor de sincronização. Não sabe de DOM nem de rede: recebe `transporte`
+   * (fala com o Worker), `agendar`/`cancelar` (timers), `agora` e `aoMudar`.
+   * `aoMudar("local")` vem de um toque do usuário; `aoMudar("rede")`, de
+   * resposta do servidor.
+   */
+  function Motor(cfg) {
+    var base = vazio(), versao = null, ops = [], ativo = false, parado = false;
+    var enviando = false, situacao = "ok", tentativas = 0, ultima = null;
+    var seq = 0, geracao = 0, timer = null, cache = null;
+
+    function mudou(origem) { cache = null; cfg.aoMudar(origem || "rede"); }
+    function estado() { return cache || (cache = aplicar(base, ops)); }
+    function receber(j) {
+      var v = (j && j.versao) || null;
+      if (v === versao) return false;
+      base = j && j.dados ? normalizar(j.dados) : vazio();
+      versao = v; seq++;
+      return true;
+    }
+    function agendar(ms) {
+      if (!ativo || parado) return;
+      if (timer) cfg.cancelar(timer);
+      timer = cfg.agendar(function () { timer = null; return enviar(); }, ms);
+    }
+    function espera() { return Math.min(60000, 5000 * Math.pow(2, Math.min(tentativas, 4))); }
+
+    function fazer(op) {
+      op = Object.assign({}, op, { k: uid() });
+      ops.push(op);
+      if (!ativo) { base = aplicar(base, ops); ops = []; }
+      else agendar(cfg.atrasoEnvio);
+      mudou("local");
+      return op;
+    }
+
+    function enviar(opts) {
+      if (!ativo || parado || enviando || !ops.length) return Promise.resolve();
+      if (timer) { cfg.cancelar(timer); timer = null; }
+      enviando = true;
+      var ger = geracao, lote = ops.slice(), dados = aplicar(base, lote), status = 0;
+      mudou("rede");
+      return Promise.resolve()
+        .then(function () { return cfg.transporte({ action: "gravar", base: versao, dados: dados, resumo: resumo(lote, base) }, opts); })
+        .then(function (r) {
+          if (ger !== geracao) return;
+          status = r.status;
+          if (r.status === 200 && r.j && r.j.versao) {
+            base = dados; versao = r.j.versao; seq++;
+            ops = ops.slice(lote.length);
+            tentativas = 0; situacao = "ok"; ultima = cfg.agora();
+          } else if (r.status === 409) {
+            receber(r.j); tentativas++;
+            if (tentativas > 3) situacao = "erro";
+          } else if (r.status === 401) {
+            parado = true; situacao = "senha";
+          } else {
+            tentativas++; situacao = "erro";
+          }
+        }, function () { if (ger === geracao) { tentativas++; situacao = "offline"; } })
+        .then(function () {
+          if (ger !== geracao) return;
+          enviando = false;
+          mudou("rede");
+          if (!ops.length || parado) return;
+          if (status === 409 && tentativas <= 3) agendar(0);
+          else agendar(situacao === "ok" ? cfg.atrasoEnvio : espera());
+        });
+    }
+
+    function puxar() {
+      if (!ativo || parado || enviando) return Promise.resolve(false);
+      var ger = geracao, minhaSeq = seq;
+      return Promise.resolve()
+        .then(function () { return cfg.transporte({ action: "ler" }); })
+        .then(function (r) {
+          if (ger !== geracao) return false;
+          if (r.status === 200) {
+            // Se uma gravação terminou enquanto esta leitura viajava, a
+            // resposta é anterior a ela: descartar para não voltar no tempo.
+            var novo = seq === minhaSeq && !enviando ? receber(r.j) : false;
+            if (situacao !== "senha") situacao = "ok";
+            ultima = cfg.agora();
+            mudou("rede");
+            if (ops.length && !enviando) agendar(0);
+            return novo;
+          }
+          if (r.status === 401) { parado = true; situacao = "senha"; } else situacao = "erro";
+          mudou("rede");
+          return false;
+        }, function () {
+          if (ger === geracao) { situacao = "offline"; mudou("rede"); }
+          return false;
+        });
+    }
+
+    function ativar(b, v, novas) {
+      geracao++;
+      if (timer) { cfg.cancelar(timer); timer = null; }
+      ativo = true; parado = false; enviando = false; tentativas = 0; situacao = "ok";
+      base = normalizar(b); versao = v || null; seq++;
+      ops = (novas || []).map(function (op) { return Object.assign({}, op, { k: uid() }); });
+      mudou("local");
+      if (ops.length) agendar(0);
+    }
+
+    function desativar() {
+      var atual = estado();
+      geracao++;
+      if (timer) { cfg.cancelar(timer); timer = null; }
+      ativo = false; parado = false; enviando = false; situacao = "ok"; tentativas = 0;
+      base = atual; ops = []; versao = null; ultima = null;
+      mudou("local");
+    }
+
+    function restaurar(s) {
+      s = s || {};
+      base = normalizar(s.base);
+      versao = s.versao || null;
+      ops = (Array.isArray(s.ops) ? s.ops : []).filter(function (op) { return op && typeof op.t === "string" && op.k; });
+      ativo = !!s.ativo;
+      if (!ativo) { base = aplicar(base, ops); ops = []; versao = null; }
+      cache = null;
+    }
+
+    return {
+      estado: estado, fazer: fazer, enviar: enviar, puxar: puxar,
+      ativar: ativar, desativar: desativar, restaurar: restaurar,
+      exportar: function () { return { ativo: ativo, base: base, versao: versao, ops: ops }; },
+      info: function () {
+        return { ativo: ativo, parado: parado, enviando: enviando, situacao: situacao, pendentes: ops.length, ultima: ultima, versao: versao };
+      }
+    };
+  }
+
+  return {
+    CATEGORIAS: CATEGORIAS, LOCAIS: LOCAIS, UNIDADES: UNIDADES, ESTADOS: ESTADOS,
+    uid: uid, arred: arred, num: num, vazio: vazio, normalizar: normalizar, chave: chave,
+    aplicar: aplicar, resumo: resumo, comparar: comparar, Motor: Motor
+  };
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  var N = Nucleo;
+  var KEY = "mercado-em-casa:v1";          // estado visível (formato da versão sem sincronização)
+  var KEY_SYNC = "mercado-em-casa:sync";   // conexão + base do servidor + operações pendentes
+  var CATEGORIAS = N.CATEGORIAS, LOCAIS = N.LOCAIS, UNIDADES = N.UNIDADES;
+  var ROTULO_ESTADO = { fechado: "Fechado", aberto: "Aberto", metade: "Pela metade", acabando: "Quase acabando" };
+  var KEY_MERCADO = "mercado-em-casa:ultimo-mercado"; // conveniência deste aparelho
+
+  // ---------- utilitários ----------
+  function $(s) { return document.querySelector(s); }
+  function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function iso(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function hojeISO() { return iso(new Date()); }
+  function addDias(n) { var d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return iso(d); }
+  function parseISO(s) { var p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2], 12); }
+  function diasAte(s) { return Math.round((parseISO(s) - parseISO(hojeISO())) / 86400000); }
+  function fmtData(s) { return parseISO(s).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }); }
+  function fmtHora(ms) { var d = new Date(ms); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function fmtNum(n) { return Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 2 }); }
+  function fmtReal(n) { return Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+  function passo(u) { return (u === "kg" || u === "L") ? 0.5 : (u === "g" || u === "ml") ? 100 : 1; }
+  function plural(n, um, varios) { return n + " " + (n === 1 ? um : varios); }
+  var num = N.num, uid = N.uid;
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function lerLS(k) { try { var r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+  function b64(s) { var b = new TextEncoder().encode(s), t = ""; b.forEach(function (x) { t += String.fromCharCode(x); }); return btoa(t); }
+  function deB64(s) { var t = atob(s), b = new Uint8Array(t.length); for (var i = 0; i < t.length; i++) b[i] = t.charCodeAt(i); return new TextDecoder().decode(b); }
+
+  // ---------- dados ----------
+  function exemplo() {
+    var it = function (nome, categoria, local, qtd, unidade, minimo, dias, estado) {
+      return { id: uid(), nome: nome, categoria: categoria, local: local, qtd: qtd, unidade: unidade, minimo: minimo, validade: dias == null ? "" : addDias(dias), estado: estado || "fechado" };
+    };
+    var items = [
+      it("Arroz branco 5 kg", "Mercearia", "Despensa", 1, "pct", 1, 140, "aberto"),
+      it("Feijão carioca", "Mercearia", "Despensa", 0, "pct", 2, 210),
+      it("Café torrado 500 g", "Mercearia", "Despensa", 1, "pct", 0, 75, "acabando"),
+      it("Leite integral", "Laticínios", "Despensa", 4, "L", 6, 9),
+      it("Iogurte natural", "Laticínios", "Geladeira", 2, "un", 0, -1),
+      it("Ovos", "Carnes e ovos", "Geladeira", 1, "dz", 1, 5, "metade"),
+      it("Tomate", "Hortifrúti", "Geladeira", 0.5, "kg", 1, 3),
+      it("Pão de forma", "Padaria", "Despensa", 1, "pct", 1, 0, "aberto"),
+      it("Peito de frango", "Carnes e ovos", "Freezer", 1.5, "kg", 1, 48),
+      it("Detergente", "Limpeza", "Área de serviço", 3, "un", 2, null, "metade"),
+      it("Papel higiênico 12 rolos", "Higiene", "Banheiro", 1, "pct", 1, null, "aberto")
+    ];
+    var porNome = {};
+    items.forEach(function (x) { porNome[x.nome] = x.id; });
+    // [item, Atacadão, Assaí, Mercado do bairro]; null = preço não anotado ali
+    var tabela = [
+      ["Arroz branco 5 kg", 27.90, 26.80, 32.50],
+      ["Feijão carioca", 7.49, 7.29, 8.90],
+      ["Café torrado 500 g", 18.90, 19.50, 22.40],
+      ["Leite integral", 4.79, 4.59, 5.49],
+      ["Detergente", 2.29, null, 2.99],
+      ["Papel higiênico 12 rolos", 19.90, 18.70, 24.90],
+      ["Tomate", null, 6.99, 7.90]
+    ];
+    var mercados = [["Atacadão", -12], ["Assaí", -20], ["Mercado do bairro", -5]];
+    var precos = [];
+    tabela.forEach(function (l) {
+      mercados.forEach(function (m, i) {
+        if (l[i + 1] == null) return;
+        precos.push({ id: uid(), nome: l[0], itemId: porNome[l[0]] || "", mercado: m[0], valor: l[i + 1], qtd: 1, data: addDias(m[1]), carrinho: false });
+      });
+    });
+    return { versao: 1, exemplo: true, items: items, extras: [{ id: uid(), texto: "Pilhas AA", feito: false }], precos: precos };
+  }
+
+  // Conexão deste aparelho. A senha fica no navegador para o app sincronizar
+  // sozinho; "Desconectar" a apaga.
+  var salvo = lerLS(KEY_SYNC) || {};
+  var conexao = { url: salvo.url || "", senha: salvo.senha || "", autor: salvo.autor || "" };
+
+  function transporte(corpo, opts) {
+    var envio = Object.assign({ senha: conexao.senha, autor: conexao.autor }, corpo);
+    // text/plain evita o preflight de CORS; o Worker lê o corpo como JSON de qualquer jeito.
+    return fetch(conexao.url, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=UTF-8" },
+      body: JSON.stringify(envio), cache: "no-store", keepalive: !!(opts && opts.keepalive)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, j: j }; });
+    });
+  }
+
+  var motor = N.Motor({
+    transporte: transporte,
+    agendar: function (fn, ms) { return setTimeout(fn, ms); },
+    cancelar: function (h) { clearTimeout(h); },
+    agora: function () { return Date.now(); },
+    atrasoEnvio: 2500,
+    aoMudar: aoMudar
+  });
+  if (salvo.ativo && conexao.url && salvo.base) {
+    motor.restaurar({ ativo: true, base: salvo.base, versao: salvo.versao, ops: salvo.ops });
+  } else {
+    var antigo = lerLS(KEY);
+    motor.restaurar({ ativo: false, base: antigo && Array.isArray(antigo.items) ? antigo : exemplo() });
+  }
+
+  var state = motor.estado();
+  var ui = { aba: "despensa", local: "Todos", busca: "", ordem: "validade", editId: null, filtroStat: null, escolha: null, cmpModo: "lista" };
+  var pronto = false;
+
+  var avisouFalha = false;
+  function salvar() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ versao: 1, exemplo: state.exemplo, items: state.items, extras: state.extras, precos: state.precos }));
+      localStorage.setItem(KEY_SYNC, JSON.stringify(Object.assign({}, conexao, motor.exportar())));
+    } catch (e) {
+      if (!avisouFalha) { avisouFalha = true; toast("Este navegador não está salvando os dados. Faça um backup antes de sair."); }
+    }
+  }
+
+  // Toque do usuário redesenha tudo na hora. Resposta da rede espera o usuário
+  // sair do campo de quantidade comprada, senão o redesenho apagaria o que ele digita.
+  var renderAdiado = false;
+  function aoMudar(origem) {
+    state = motor.estado();
+    salvar();
+    if (!pronto) return;
+    var a = document.activeElement;
+    if (origem !== "local" && a && a.matches && a.matches(".buy-act input")) {
+      renderAdiado = true; renderResumo(); renderStatus(); renderCasa();
+      return;
+    }
+    render();
+  }
+  document.addEventListener("focusout", function () {
+    if (!renderAdiado) return;
+    setTimeout(function () {
+      var a = document.activeElement;
+      if (a && a.matches && a.matches(".buy-act input")) return;
+      renderAdiado = false; render();
+    }, 0);
+  });
+
+  function fazer(op) { motor.fazer(op); }
+  function achar(id) { return state.items.find(function (x) { return x.id === id; }) || null; }
+
+  // ---------- regras ----------
+  // "Quase acabando" conta como se a embalagem em uso já tivesse acabado.
+  function efetiva(it) { return it.estado === "acabando" ? Math.max(0, N.arred(it.qtd - passo(it.unidade))) : it.qtd; }
+  function precisaComprar(it) { var q = efetiva(it); return q <= it.minimo && (it.minimo > 0 || q <= 0); }
+  function sugestao(it) {
+    var p = passo(it.unidade);
+    var alvo = it.minimo > 0 ? it.minimo * 2 : p;
+    var falta = N.arred(alvo - efetiva(it));
+    return falta > p ? Math.ceil(falta / p) * p : p;
+  }
+  function statusValidade(v) {
+    if (!v) return null;
+    var d = diasAte(v);
+    if (d < 0) return { cls: "bad", txt: d === -1 ? "Venceu ontem" : "Venceu há " + (-d) + " dias", d: d };
+    if (d === 0) return { cls: "bad", txt: "Vence hoje", d: d };
+    if (d <= 7) return { cls: "warn", txt: d === 1 ? "Vence amanhã" : "Vence em " + d + " dias", d: d };
+    return { cls: "ok", txt: "Val. " + fmtData(v), d: d };
+  }
+
+  // ---------- render ----------
+  function renderResumo() {
+    var vencidos = 0, vencendo = 0, comprar = 0;
+    state.items.forEach(function (it) {
+      var s = statusValidade(it.validade);
+      if (s && s.d < 0) vencidos++;
+      else if (s && s.d <= 7) vencendo++;
+      if (precisaComprar(it)) comprar++;
+    });
+    var totalLista = comprar + state.extras.filter(function (x) { return !x.feito; }).length;
+    var tiles = [
+      { k: "todos", n: state.items.length, l: "itens em casa", cls: "" },
+      { k: "vencendo", n: vencendo, l: "vencem em 7 dias", cls: vencendo ? "warn" : "zero" },
+      { k: "vencidos", n: vencidos, l: "vencidos", cls: vencidos ? "bad" : "zero" },
+      { k: "lista", n: totalLista, l: "na lista de compras", cls: totalLista ? "buy" : "zero" }
+    ];
+    $("#stats").innerHTML = tiles.map(function (t) {
+      return '<button class="stat ' + t.cls + '" data-act="stat" data-k="' + t.k + '"><b>' + t.n + "</b><span>" + t.l + "</span></button>";
+    }).join("");
+    var c = $("#tab-count");
+    c.hidden = !totalLista; c.textContent = totalLista;
+  }
+
+  function renderStatus() {
+    var i = motor.info(), el = $("#sync");
+    el.hidden = !i.ativo;
+    if (!i.ativo) return;
+    var cls = "", txt;
+    if (i.situacao === "senha") { cls = "bad"; txt = "Senha da casa não confere"; }
+    else if (i.situacao === "offline") { cls = "warn"; txt = "Sem conexão" + (i.pendentes ? " · " + plural(i.pendentes, "alteração guardada", "alterações guardadas") + " aqui" : ""); }
+    else if (i.situacao === "erro") { cls = "warn"; txt = "Servidor com erro · tentando de novo"; }
+    else if (i.enviando || i.pendentes) { txt = "Salvando…"; }
+    else { cls = "ok"; txt = "Sincronizado" + (i.ultima ? " às " + fmtHora(i.ultima) : ""); }
+    el.className = "sync " + cls;
+    el.textContent = txt;
+  }
+
+  function renderBanner() {
+    $("#banner").innerHTML = state.exemplo
+      ? '<div class="banner"><p>Estes são <b>itens de exemplo</b> para você ver como funciona.</p><div class="row">' +
+        '<button class="btn small" data-act="manter-exemplo">Manter e editar</button>' +
+        '<button class="btn small primary" data-act="zerar-exemplo">Começar do zero</button></div></div>'
+      : "";
+  }
+
+  function renderChips() {
+    var locais = ["Todos"].concat(LOCAIS.filter(function (l) { return state.items.some(function (it) { return it.local === l; }); }));
+    if (locais.indexOf(ui.local) < 0) ui.local = "Todos";
+    $("#chips-local").innerHTML = locais.map(function (l) {
+      return '<button class="chip" data-act="local" data-local="' + esc(l) + '" aria-pressed="' + (l === ui.local) + '">' + esc(l) + "</button>";
+    }).join("");
+  }
+
+  function botaoEstado(it) {
+    if (it.qtd <= 0) return "";
+    return '<button class="nivel" data-act="estado" data-id="' + esc(it.id) + '" data-e="' + it.estado + '" aria-label="Embalagem de ' +
+      esc(it.nome) + ': ' + ROTULO_ESTADO[it.estado] + '. Toque para mudar"><i></i>' + ROTULO_ESTADO[it.estado] + "</button>";
+  }
+
+  function badgeValidade(it) {
+    var s = statusValidade(it.validade);
+    return s ? '<span class="badge ' + s.cls + '">' + s.txt + "</span>" : "";
+  }
+
+  function renderDespensa() {
+    renderChips();
+    var q = ui.busca.trim().toLowerCase();
+    var itens = state.items.filter(function (it) {
+      if (ui.local !== "Todos" && it.local !== ui.local) return false;
+      if (q && (it.nome + " " + it.categoria).toLowerCase().indexOf(q) < 0) return false;
+      if (ui.filtroStat === "vencendo") { var s = statusValidade(it.validade); return s && s.d >= 0 && s.d <= 7; }
+      if (ui.filtroStat === "vencidos") { var s2 = statusValidade(it.validade); return s2 && s2.d < 0; }
+      return true;
+    });
+    var cmp = {
+      validade: function (a, b) {
+        var da = a.validade ? diasAte(a.validade) : Infinity, db = b.validade ? diasAte(b.validade) : Infinity;
+        return (da === db ? 0 : da - db) || a.nome.localeCompare(b.nome, "pt-BR");
+      },
+      nome: function (a, b) { return a.nome.localeCompare(b.nome, "pt-BR"); },
+      categoria: function (a, b) { return a.categoria.localeCompare(b.categoria, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"); },
+      qtd: function (a, b) { return (a.qtd - a.minimo) - (b.qtd - b.minimo) || a.nome.localeCompare(b.nome, "pt-BR"); }
+    }[ui.ordem];
+    itens.sort(cmp);
+
+    var titulo = ui.filtroStat === "vencendo" ? "Vencem em 7 dias" : ui.filtroStat === "vencidos" ? "Vencidos" : (ui.local === "Todos" ? "Tudo em casa" : ui.local);
+    $("#titulo-local").textContent = titulo;
+    $("#total-filtrado").innerHTML = plural(itens.length, "item", "itens") +
+      (ui.filtroStat ? ' · <a href="#" data-act="limpar-filtro" style="color:inherit">ver todos</a>' : "");
+
+    if (!itens.length) {
+      $("#lista-itens").innerHTML = '<li class="empty">' +
+        (state.items.length ? "Nenhum item com esse filtro." : "<span>Sua despensa está vazia.</span><button class=\"btn primary\" data-act=\"add\">+ Adicionar o primeiro item</button>") + "</li>";
+      return;
+    }
+    $("#lista-itens").innerHTML = itens.map(function (it) {
+      var meta = [it.categoria, ui.local === "Todos" ? it.local : null, it.minimo > 0 ? "mín. " + fmtNum(it.minimo) + " " + it.unidade : null].filter(Boolean).join(" · ");
+      return '<li class="item">' +
+        '<div class="item-info"><span class="item-name">' + esc(it.nome) + '</span>' +
+        '<span class="item-meta">' + esc(meta) + "</span>" +
+        '<div class="badges">' + botaoEstado(it) + badgeValidade(it) + (precisaComprar(it) ? '<span class="badge buy">Comprar</span>' : "") + "</div></div>" +
+        '<div class="stepper" role="group" aria-label="Quantidade de ' + esc(it.nome) + '">' +
+        '<button data-act="dec" data-id="' + esc(it.id) + '" aria-label="Diminuir">−</button>' +
+        "<output>" + fmtNum(it.qtd) + " <small>" + esc(it.unidade) + "</small></output>" +
+        '<button data-act="inc" data-id="' + esc(it.id) + '" aria-label="Aumentar">+</button></div>' +
+        '<button class="btn small" data-act="edit" data-id="' + esc(it.id) + '">Editar</button>' +
+        "</li>";
+    }).join("");
+  }
+
+  function renderLista() {
+    var auto = state.items.filter(precisaComprar).sort(function (a, b) { return a.nome.localeCompare(b.nome, "pt-BR"); });
+    $("#lista-auto-total").textContent = auto.length ? plural(auto.length, "item", "itens") : "";
+    $("#lista-auto").innerHTML = auto.length ? auto.map(function (it) {
+      return '<li class="item buy-row">' +
+        '<div class="item-info"><span class="item-name">' + esc(it.nome) + "</span>" +
+        '<span class="item-meta">Tem ' + fmtNum(it.qtd) + " " + esc(it.unidade) + (it.estado !== "fechado" && it.qtd > 0 ? " (" + ROTULO_ESTADO[it.estado].toLowerCase() + ")" : "") + (it.minimo > 0 ? " · mínimo " + fmtNum(it.minimo) : "") + " · " + esc(it.local) + "</span></div>" +
+        '<div class="buy-act"><input type="number" min="0" step="any" inputmode="decimal" id="compra-' + esc(it.id) + '" value="' + sugestao(it) + '" aria-label="Quantidade comprada de ' + esc(it.nome) + '">' +
+        '<span class="unit">' + esc(it.unidade) + "</span>" +
+        '<button class="btn small primary" data-act="comprei" data-id="' + esc(it.id) + '">Comprei</button></div>' +
+        "</li>";
+    }).join("") : '<li class="empty">Nada acabando. Tudo acima do estoque mínimo.</li>';
+
+    $("#lista-extras").innerHTML = state.extras.length ? state.extras.map(function (x) {
+      return '<li class="item extra-row' + (x.feito ? " done" : "") + '">' +
+        '<input type="checkbox" id="ex-' + esc(x.id) + '" data-act="extra-toggle" data-id="' + esc(x.id) + '"' + (x.feito ? " checked" : "") + ">" +
+        '<label class="item-name" for="ex-' + esc(x.id) + '">' + esc(x.texto) + "</label>" +
+        '<button class="btn small" data-act="extra-del" data-id="' + esc(x.id) + '" aria-label="Remover ' + esc(x.texto) + '">Remover</button></li>';
+    }).join("") : '<li class="empty">Nenhum item avulso.</li>';
+  }
+
+  function noCarrinho() { return state.precos.filter(function (p) { return p.carrinho; }); }
+  function itemDoPreco(p) {
+    return (p.itemId && achar(p.itemId)) || state.items.find(function (it) { return N.chave(it.nome) === N.chave(p.nome); }) || null;
+  }
+  function lerMercado() { try { return localStorage.getItem(KEY_MERCADO) || ""; } catch (e) { return ""; } }
+  function guardarMercado(m) { try { localStorage.setItem(KEY_MERCADO, m); } catch (e) { /* só conveniência */ } }
+  function opcoesUnicas(lista) {
+    var vistos = {}, saida = [];
+    lista.forEach(function (n) { var k = N.chave(n); if (k && !vistos[k]) { vistos[k] = 1; saida.push(n); } });
+    return saida.sort(function (a, b) { return a.localeCompare(b, "pt-BR"); }).map(function (n) { return '<option value="' + esc(n) + '">'; }).join("");
+  }
+
+  function renderCarrinho() {
+    var cart = noCarrinho(), total = 0;
+    cart.forEach(function (p) { total += p.valor * p.qtd; });
+    $("#cart-resumo").textContent = cart.length ? plural(cart.length, "item", "itens") : "vazio";
+    $("#lista-cart").innerHTML = cart.length ? cart.map(function (p) {
+      return '<li class="item cart-row"><div class="item-info"><span class="item-name">' + esc(p.nome) + "</span>" +
+        '<span class="item-meta">' + esc(p.mercado) + " · " + fmtNum(p.qtd) + " × " + fmtReal(p.valor) + (itemDoPreco(p) ? "" : " · fora da despensa") + "</span></div>" +
+        '<span class="money">' + fmtReal(N.arred(p.valor * p.qtd)) + "</span>" +
+        '<button class="btn small" data-act="cart-del" data-id="' + esc(p.id) + '" aria-label="Tirar ' + esc(p.nome) + ' do carrinho">Tirar</button></li>';
+    }).join("") : '<li class="empty">Anote aqui o que for pegando no mercado. O preço fica guardado para comparar depois.</li>';
+    $("#cart-foot").hidden = !cart.length;
+    $("#cart-total").textContent = fmtReal(N.arred(total));
+    $("#dl-itens").innerHTML = opcoesUnicas(state.items.map(function (x) { return x.nome; }).concat(state.precos.map(function (x) { return x.nome; })));
+    $("#dl-mercados").innerHTML = opcoesUnicas(state.precos.map(function (x) { return x.mercado; }));
+    if (!$("#k-mercado").value) $("#k-mercado").value = lerMercado();
+    renderComparativo();
+    renderHistorico();
+  }
+
+  function renderComparativo() {
+    var lista = state.items.filter(precisaComprar).map(function (it) { return { nome: it.nome }; });
+    var todos = state.precos.map(function (p) { return { nome: p.nome }; });
+    var modos = [{ k: "lista", l: "Lista de compras" }, { k: "tudo", l: "Tudo com preço" }];
+    $("#cmp-modo").innerHTML = modos.map(function (m) {
+      return '<button class="chip" data-act="cmp-modo" data-modo="' + m.k + '" aria-pressed="' + (ui.cmpModo === m.k) + '">' + m.l + "</button>";
+    }).join("");
+    var r = N.comparar(state.precos, ui.cmpModo === "lista" ? lista : todos);
+    var txt = [];
+    if (!r.linhas.length) {
+      txt.push(ui.cmpModo === "lista"
+        ? (lista.length ? "Nenhum item da lista de compras tem preço anotado ainda." : "A lista de compras está vazia. Veja a comparação de tudo que tem preço.")
+        : "Nenhum preço anotado ainda.");
+      txt.push('<span class="muted">Anote os preços no carrinho acima. Cada mercado novo vira uma coluna aqui.</span>');
+      $("#cmp-texto").innerHTML = txt.map(function (t) { return "<p>" + t + "</p>"; }).join("");
+      $("#cmp-tabela").innerHTML = "";
+      return;
+    }
+    var ms = r.mercados;
+    if (ms.length === 1) {
+      txt.push("Só há preços do " + esc(ms[0].nome) + ". Anote os mesmos itens em outro mercado para comparar.");
+    } else if (r.comum) {
+      var barato = ms[0], caro = ms[ms.length - 1];
+      txt.push("<b>" + esc(barato.nome) + "</b> sai mais barato nos " + plural(r.comum, "item", "itens") + " que todos os mercados têm: " +
+        fmtReal(barato.totalComum) + (caro.totalComum > barato.totalComum ? ", " + fmtReal(N.arred(caro.totalComum - barato.totalComum)) + " a menos que no " + esc(caro.nome) : "") + ".");
+    } else {
+      txt.push("Nenhum item tem preço em todos os mercados ainda, então os totais de cada coluna não dá para comparar entre si.");
+    }
+    if (ms.length > 1) txt.push("Comprando cada item onde é mais barato: <b>" + fmtReal(r.combinacao) + "</b>.");
+    if (r.semPreco.length) txt.push('<span class="muted">Sem preço anotado: ' + esc(r.semPreco.join(", ")) + ".</span>");
+    txt.push('<span class="muted">Conta 1 unidade de cada item, pelo último preço anotado. Compare sempre o mesmo tamanho de embalagem.</span>');
+    $("#cmp-texto").innerHTML = txt.map(function (t) { return "<p>" + t + "</p>"; }).join("");
+
+    var cab = "<tr><th>Item</th>" + ms.map(function (m) { return "<th>" + esc(m.nome) + "</th>"; }).join("") + "</tr>";
+    var corpo = r.linhas.map(function (l) {
+      var comPreco = ms.filter(function (m) { return l.precos[m.chave]; }).length;
+      return "<tr><td>" + esc(l.nome) + "</td>" + ms.map(function (m) {
+        var p = l.precos[m.chave];
+        if (!p) return '<td class="falta">—</td>';
+        var dica = p.data ? ' title="anotado em ' + fmtData(p.data) + '"' : "";
+        return "<td" + (l.melhor === m.chave && comPreco > 1 ? ' class="melhor"' : "") + dica + "><span>" + fmtReal(p.valor) + "</span></td>";
+      }).join("") + "</tr>";
+    }).join("");
+    var pe = "<tr><td>Total<small>itens com preço</small></td>" + ms.map(function (m, i) {
+      return "<td" + (i === 0 && r.comum && ms.length > 1 ? ' class="barato"' : "") + ">" + fmtReal(m.total) +
+        "<small>" + m.n + " de " + r.linhas.length + (r.comum && ms.length > 1 ? " · comuns " + fmtReal(m.totalComum) : "") + "</small></td>";
+    }).join("") + "</tr>";
+    $("#cmp-tabela").innerHTML = '<table class="cmp"><thead>' + cab + "</thead><tbody>" + corpo + "</tbody><tfoot>" + pe + "</tfoot></table>";
+  }
+
+  function renderHistorico() {
+    var hist = state.precos.filter(function (p) { return !p.carrinho; }).sort(function (a, b) {
+      return (b.data || "").localeCompare(a.data || "") || a.nome.localeCompare(b.nome, "pt-BR");
+    });
+    $("#hist-total").textContent = hist.length ? "· " + hist.length : "";
+    $("#lista-hist").innerHTML = hist.length ? hist.slice(0, 300).map(function (p) {
+      return '<li class="item cart-row"><div class="item-info"><span class="item-name">' + esc(p.nome) + "</span>" +
+        '<span class="item-meta">' + esc(p.mercado) + (p.data ? " · " + fmtData(p.data) : "") + "</span></div>" +
+        '<span class="money">' + fmtReal(p.valor) + "</span>" +
+        '<button class="btn small" data-act="hist-del" data-id="' + esc(p.id) + '" aria-label="Apagar preço de ' + esc(p.nome) + '">Apagar</button></li>';
+    }).join("") : '<li class="empty">As compras fechadas no carrinho aparecem aqui.</li>';
+  }
+
+  function renderCasa() {
+    var i = motor.info();
+    $("#casa-off").hidden = i.ativo;
+    $("#casa-on").hidden = !i.ativo;
+    $("#casa-escolha").hidden = !ui.escolha;
+    $("#casa-resumo").textContent = i.ativo ? "conectado" : "só neste aparelho";
+    $$(".so-casa").forEach(function (el) { el.hidden = !i.ativo; });
+    $("#backup-txt").textContent = i.ativo
+      ? "A despensa da casa fica no servidor, e cada alteração vira uma versão no histórico do repositório. O backup abaixo é uma cópia extra que você guarda onde quiser."
+      : "Os itens ficam salvos só neste navegador. Para passar para outro celular, ou antes de limpar os dados do navegador, baixe um backup e importe do outro lado.";
+    if (!i.ativo) return;
+    var host = conexao.url;
+    try { host = new URL(conexao.url).host; } catch (e) { /* mantém o texto cru */ }
+    $("#casa-info").textContent = "Conectado a " + host + (conexao.autor ? " como " + conexao.autor : "") + ". " +
+      (i.pendentes ? plural(i.pendentes, "alteração ainda não chegou", "alterações ainda não chegaram") + " na casa. " : "") +
+      (i.ultima ? "Última conversa com o servidor às " + fmtHora(i.ultima) + "." : "");
+    var alerta = $("#casa-alerta");
+    alerta.hidden = i.situacao !== "senha";
+    alerta.textContent = "O servidor recusou a senha. Se ela mudou, desconecte este aparelho e conecte de novo com a senha nova. As alterações pendentes ficam guardadas aqui.";
+  }
+
+  function renderBackup() {
+    $("#backup-resumo").textContent = plural(state.items.length, "item", "itens") + " · " + plural(state.extras.length, "avulso", "avulsos");
+    renderCasa();
+  }
+
+  function render() {
+    renderResumo();
+    renderStatus();
+    renderBanner();
+    ["despensa", "lista", "carrinho", "backup"].forEach(function (a) {
+      $("#aba-" + a).hidden = a !== ui.aba;
+      $("#tab-" + a).setAttribute("aria-selected", String(a === ui.aba));
+    });
+    if (ui.aba === "despensa") renderDespensa();
+    if (ui.aba === "lista") renderLista();
+    if (ui.aba === "carrinho") renderCarrinho();
+    if (ui.aba === "backup") renderBackup();
+  }
+
+  // ---------- toast e confirmação em dois toques ----------
+  var toastT;
+  function toast(msg) {
+    var t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+  function confirmar(btn, texto, fn) {
+    if (btn.dataset.armed) { desarmar(btn); fn(); return; }
+    btn.dataset.armed = "1"; btn.dataset.orig = btn.textContent; btn.textContent = texto;
+    btn._t = setTimeout(function () { desarmar(btn); }, 4000);
+  }
+  function desarmar(btn) {
+    clearTimeout(btn._t);
+    if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; }
+  }
+  function emCasa(txt) { return motor.info().ativo ? txt + " em todos os aparelhos" : txt; }
+
+  // ---------- diálogo ----------
+  function opcoes(sel, lista) { $(sel).innerHTML = lista.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + "</option>"; }).join(""); }
+  opcoes("#f-categoria", CATEGORIAS); opcoes("#f-local", LOCAIS); opcoes("#f-unidade", UNIDADES);
+  $("#f-estado").innerHTML = N.ESTADOS.map(function (e) { return '<option value="' + e + '">' + ROTULO_ESTADO[e] + "</option>"; }).join("");
+
+  function abrirForm(id) {
+    var it = id ? achar(id) : null;
+    ui.editId = it ? it.id : null;
+    $("#dlg-title").textContent = it ? "Editar item" : "Novo item";
+    $("#f-nome").value = it ? it.nome : "";
+    $("#f-categoria").value = it ? it.categoria : "Mercearia";
+    $("#f-local").value = it ? it.local : (ui.local !== "Todos" ? ui.local : "Despensa");
+    $("#f-qtd").value = it ? it.qtd : 1;
+    $("#f-unidade").value = it ? it.unidade : "un";
+    $("#f-minimo").value = it ? it.minimo : 1;
+    $("#f-validade").value = it ? it.validade : "";
+    $("#f-estado").value = it ? it.estado : "fechado";
+    $("#f-erro").hidden = true;
+    var ex = $("#btn-excluir"); ex.hidden = !it; desarmar(ex);
+    var dlg = $("#dlg");
+    if (dlg.showModal) dlg.showModal(); else dlg.setAttribute("open", "");
+    setTimeout(function () { $("#f-nome").focus(); }, 30);
+  }
+  function fecharForm() { var d = $("#dlg"); if (d.close) d.close(); else d.removeAttribute("open"); }
+
+  $("#form-item").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var nome = $("#f-nome").value.trim();
+    var qtd = num($("#f-qtd").value, NaN), minimo = num($("#f-minimo").value, NaN);
+    var erro = !nome ? "Dê um nome ao item." : isNaN(qtd) ? "A quantidade precisa ser um número igual ou maior que zero." : isNaN(minimo) ? "O estoque mínimo precisa ser um número igual ou maior que zero." : "";
+    if (erro) { var el = $("#f-erro"); el.textContent = erro; el.hidden = false; return; }
+    var dados = { nome: nome.slice(0, 80), categoria: $("#f-categoria").value, local: $("#f-local").value, qtd: qtd, unidade: $("#f-unidade").value, minimo: minimo, validade: $("#f-validade").value || "", estado: $("#f-estado").value };
+    var editando = ui.editId;
+    fecharForm();
+    fazer({ t: "item", id: editando || uid(), campos: dados });
+    toast(editando ? "Item atualizado" : dados.nome + " adicionado");
+  });
+
+  // ---------- conexão com a casa ----------
+  function erroCasa(msg) {
+    var el = $("#casa-erro"); el.textContent = msg; el.hidden = !msg;
+    var b = $("#btn-conectar"); b.disabled = false; b.textContent = "Conectar";
+  }
+
+  function conectar() {
+    var url = $("#c-url").value.trim().replace(/\/+$/, "");
+    var senha = $("#c-senha").value;
+    var autor = $("#c-autor").value.trim().slice(0, 30);
+    if (!/^https:\/\/[^\s/]+/.test(url)) return erroCasa("O endereço precisa começar com https://");
+    if (!senha) return erroCasa("Informe a senha da casa.");
+    conexao = { url: url, senha: senha, autor: autor };
+    ui.escolha = null;
+    erroCasa("");
+    var b = $("#btn-conectar"); b.disabled = true; b.textContent = "Conectando…";
+    transporte({ action: "ler" }).then(function (r) {
+      if (r.status === 401) return erroCasa("A senha não confere com a do servidor.");
+      if (r.status !== 200) return erroCasa("O servidor respondeu com erro " + r.status + (r.j && r.j.error ? " (" + r.j.error + ")" : "") + ". Confira as variáveis do Worker.");
+      erroCasa("");
+      decidir(r.j || {});
+    }, function () {
+      erroCasa("Não consegui falar com o servidor. Confira o endereço, a internet e o ORIGEM_PERMITIDA do Worker.");
+    });
+  }
+
+  function temAlgo(d) { return !!(d && (d.items.length || d.extras.length)); }
+
+  function decidir(j) {
+    var casa = j.dados ? N.normalizar(j.dados) : null;
+    var aqui = motor.estado();
+    var aquiReal = !aqui.exemplo && temAlgo(aqui);
+    if (!temAlgo(casa)) {
+      motor.ativar(casa || N.vazio(), j.versao, temAlgo(aqui) ? [{ t: "tudo", dados: aqui }] : []);
+      toast("Conectado. A despensa deste aparelho foi para a casa.");
+    } else if (!aquiReal) {
+      motor.ativar(casa, j.versao, []);
+      toast("Conectado. " + plural(casa.items.length, "item", "itens") + " da casa.");
+    } else {
+      ui.escolha = { casa: casa, versao: j.versao };
+      $("#escolha-txt").textContent = "A casa já tem " + plural(casa.items.length, "item", "itens") + " e este aparelho tem " +
+        plural(aqui.items.length, "item", "itens") + ". Qual despensa fica? A outra é descartada, então baixe um backup antes se quiser guardá-la.";
+      renderCasa();
+      return;
+    }
+    salvar(); render();
+  }
+
+  // Convite: o endereço e a senha vão no fragmento (#), que o navegador não manda para servidor nenhum.
+  function lerConvite() {
+    var m = /[#&]convite=([^&]+)/.exec(location.hash || "");
+    if (!m) return;
+    try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* segue */ }
+    var c;
+    try { c = JSON.parse(deB64(decodeURIComponent(m[1]))); } catch (e) { toast("Esse link de convite está incompleto."); return; }
+    ui.aba = "backup";
+    if (motor.info().ativo) { toast("Este aparelho já está conectado a uma casa."); return; }
+    $("#c-url").value = c.u || "";
+    $("#c-senha").value = c.s || "";
+    setTimeout(function () { $("#c-autor").focus(); toast("Convite aberto. Coloque seu nome e toque em Conectar."); }, 50);
+  }
+
+  // ---------- eventos ----------
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]");
+    if (!b) return;
+    var act = b.dataset.act, id = b.dataset.id;
+    var it = id ? achar(id) : null;
+
+    switch (act) {
+      case "tab": ui.aba = b.dataset.aba; render(); break;
+      case "stat":
+        var k = b.dataset.k;
+        if (k === "lista") { ui.aba = "lista"; }
+        else { ui.aba = "despensa"; ui.filtroStat = k === "todos" ? null : k; ui.local = "Todos"; }
+        render(); break;
+      case "limpar-filtro": e.preventDefault(); ui.filtroStat = null; render(); break;
+      case "local": ui.local = b.dataset.local; ui.filtroStat = null; render(); break;
+      case "add": abrirForm(null); break;
+      case "edit": abrirForm(id); break;
+      case "fechar": fecharForm(); break;
+      case "inc": if (it) fazer({ t: "qtd", id: id, d: passo(it.unidade) }); break;
+      case "dec": if (it && it.qtd > 0) fazer({ t: "qtd", id: id, d: -Math.min(passo(it.unidade), it.qtd) }); break;
+      case "excluir":
+        confirmar(b, "Toque de novo para excluir", function () {
+          var alvo = ui.editId;
+          fecharForm(); fazer({ t: "del", id: alvo }); toast("Item excluído");
+        }); break;
+      case "comprei":
+        if (!it) break;
+        var v = num($("#compra-" + CSS.escape(id)).value, NaN);
+        if (isNaN(v) || v <= 0) { toast("Informe quanto você comprou."); break; }
+        fazer({ t: "qtd", id: id, d: v });
+        var depois = achar(id);
+        if (depois) toast(depois.nome + ": agora tem " + fmtNum(depois.qtd) + " " + depois.unidade);
+        break;
+      case "estado":
+        if (!it) break;
+        var prox = N.ESTADOS[(N.ESTADOS.indexOf(it.estado) + 1) % N.ESTADOS.length];
+        fazer({ t: "estado", id: id, valor: prox });
+        toast(it.nome + ": " + ROTULO_ESTADO[prox].toLowerCase());
+        break;
+      case "cmp-modo": ui.cmpModo = b.dataset.modo; renderComparativo(); break;
+      case "cart-del": fazer({ t: "preco-del", id: id }); break;
+      case "hist-del": confirmar(b, "Apagar?", function () { fazer({ t: "preco-del", id: id }); }); break;
+      case "fechar-compra": fecharCompra(b); break;
+      case "extra-toggle": fazer({ t: "extra", id: id, feito: b.checked }); break;
+      case "extra-del": fazer({ t: "extra-del", id: id }); break;
+      case "copiar-lista": copiarLista(); break;
+      case "manter-exemplo": fazer({ t: "exemplo", valor: false }); break;
+      case "zerar-exemplo": ui.filtroStat = null; fazer({ t: "tudo", dados: N.vazio() }); toast("Pronto. Adicione seus itens."); break;
+      case "exportar": exportar(); break;
+      case "copiar-json": $("#json-out").value = textoBackup(); copiar(textoBackup(), "Backup copiado", $("#json-out")); break;
+      case "importar": importar(b); break;
+      case "apagar-tudo":
+        confirmar(b, "Toque de novo para apagar " + plural(state.items.length, "item", "itens") + (motor.info().ativo ? " da casa" : ""), function () {
+          // o histórico de preços fica: ele vale mesmo com a despensa vazia
+          fazer({ t: "tudo", dados: { items: [], extras: [] } }); toast(emCasa("Itens apagados"));
+        }); break;
+
+      case "ir-casa": ui.aba = "backup"; render(); sincronizarAgora(); break;
+      case "conectar": conectar(); break;
+      case "usar-casa":
+        if (!ui.escolha) break;
+        motor.ativar(ui.escolha.casa, ui.escolha.versao, []); ui.escolha = null;
+        toast("Conectado. Usando a despensa da casa."); break;
+      case "enviar-local":
+        if (!ui.escolha) break;
+        confirmar(b, "Toque de novo: a da casa será substituída", function () {
+          var p = ui.escolha; ui.escolha = null;
+          motor.ativar(p.casa, p.versao, [{ t: "tudo", dados: motor.estado() }]);
+          toast("Conectado. A despensa deste aparelho foi para a casa.");
+        }); break;
+      case "cancelar-conexao": ui.escolha = null; conexao.senha = ""; salvar(); renderCasa(); break;
+      case "sincronizar": sincronizarAgora(true); break;
+      case "copiar-convite":
+        var link = location.href.split("#")[0] + "#convite=" + encodeURIComponent(b64(JSON.stringify({ u: conexao.url, s: conexao.senha })));
+        copiar(link, "Convite copiado. Mande só para quem mora com você.");
+        break;
+      case "desconectar":
+        var pend = motor.info().pendentes;
+        confirmar(b, pend ? "Há " + plural(pend, "alteração", "alterações") + " sem enviar. Desconectar?" : "Toque de novo para desconectar", function () {
+          motor.desativar(); conexao.senha = "";
+          $("#c-url").value = conexao.url; $("#c-autor").value = conexao.autor; $("#c-senha").value = "";
+          salvar(); render(); toast("Desconectado. A despensa continua neste aparelho.");
+        }); break;
+    }
+  });
+
+  function sincronizarAgora(avisar) {
+    var i = motor.info();
+    if (!i.ativo) return;
+    var p = i.pendentes ? motor.enviar() : motor.puxar();
+    if (avisar) p.then(function () {
+      var s = motor.info().situacao;
+      toast(s === "ok" ? "Tudo em dia com a casa." : s === "offline" ? "Sem conexão com o servidor." : s === "senha" ? "O servidor recusou a senha." : "O servidor respondeu com erro.");
+    });
+  }
+
+  function lerPreco(v) {
+    v = String(v || "").split("R$").join("").trim();
+    if (v.indexOf(",") >= 0) v = v.split(".").join(""); // 1.234,56
+    return num(v, NaN);
+  }
+
+  $("#form-cart").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var nome = $("#k-item").value.trim(), mercado = $("#k-mercado").value.trim();
+    var valor = lerPreco($("#k-valor").value), qtd = num($("#k-qtd").value, NaN);
+    var erro = !nome ? "Diga qual é o item." : !mercado ? "Diga em qual mercado." : !(valor > 0) ? "Informe o preço, por exemplo 12,90." : !(qtd > 0) ? "A quantidade precisa ser maior que zero." : "";
+    var el = $("#k-erro");
+    el.textContent = erro; el.hidden = !erro;
+    if (erro) return;
+    // reaproveita a grafia que já existe, para o comparativo casar os nomes
+    var it = state.items.find(function (x) { return N.chave(x.nome) === N.chave(nome); });
+    var ja = state.precos.find(function (p) { return N.chave(p.mercado) === N.chave(mercado); });
+    if (ja) mercado = ja.mercado;
+    fazer({ t: "preco-novo", id: uid(), preco: { nome: it ? it.nome : nome, itemId: it ? it.id : "", mercado: mercado, valor: valor, qtd: qtd, data: hojeISO(), carrinho: true } });
+    guardarMercado(mercado);
+    $("#k-mercado").value = mercado;
+    $("#k-item").value = ""; $("#k-valor").value = ""; $("#k-qtd").value = 1;
+    $("#k-item").focus();
+  });
+
+  function fecharCompra(b) {
+    var cart = noCarrinho();
+    if (!cart.length) return;
+    var somar = $("#k-somar").checked;
+    var total = N.arred(cart.reduce(function (s, p) { return s + p.valor * p.qtd; }, 0));
+    confirmar(b, "Toque de novo para fechar " + fmtReal(total), function () {
+      var somados = 0, fora = 0;
+      if (somar) cart.forEach(function (p) {
+        var it = itemDoPreco(p);
+        if (it) { fazer({ t: "qtd", id: it.id, d: p.qtd }); somados++; } else fora++;
+      });
+      fazer({ t: "carrinho-fechar", ids: cart.map(function (p) { return p.id; }) });
+      toast("Compra fechada: " + fmtReal(total) + (somar ? ". " + plural(somados, "item somado", "itens somados") + " na despensa" + (fora ? ", " + fora + " fora dela" : "") : "") + ".");
+    });
+  }
+
+  $("#busca").addEventListener("input", function (e) { ui.busca = e.target.value; renderDespensa(); });
+  $("#ordem").addEventListener("change", function (e) { ui.ordem = e.target.value; renderDespensa(); });
+  $("#form-extra").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("#extra-texto").value.trim();
+    if (!t) return;
+    $("#extra-texto").value = "";
+    fazer({ t: "extra-novo", id: uid(), texto: t.slice(0, 80) });
+  });
+
+  // ---------- copiar, exportar e importar ----------
+  function copiar(texto, ok, fallbackEl) {
+    var falhou = function () {
+      if (fallbackEl) { fallbackEl.value = texto; fallbackEl.focus(); fallbackEl.select(); }
+      toast("Não deu para copiar sozinho." + (fallbackEl ? " O texto ficou selecionado: use Ctrl+C." : ""));
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(function () { toast(ok); }, falhou);
+      else falhou();
+    } catch (e) { falhou(); }
+  }
+
+  function copiarLista() {
+    var auto = state.items.filter(precisaComprar);
+    var extras = state.extras.filter(function (x) { return !x.feito; });
+    if (!auto.length && !extras.length) { toast("A lista está vazia."); return; }
+    var linhas = ["Lista de compras – " + fmtData(hojeISO())];
+    auto.forEach(function (it) {
+      var campo = document.getElementById("compra-" + it.id);
+      var q = campo ? num(campo.value, sugestao(it)) : sugestao(it);
+      linhas.push("- " + it.nome + ": " + fmtNum(q) + " " + it.unidade);
+    });
+    extras.forEach(function (x) { linhas.push("- " + x.texto); });
+    copiar(linhas.join("\n"), "Lista copiada. Cole no WhatsApp ou nas notas.");
+  }
+
+  function textoBackup() { return JSON.stringify({ versao: 1, exportadoEm: new Date().toISOString(), items: state.items, extras: state.extras, precos: state.precos }, null, 2); }
+
+  function exportar() {
+    var json = textoBackup();
+    $("#json-out").value = json;
+    try {
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+      a.download = "mercado-em-casa-" + hojeISO() + ".json";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    } catch (e) { /* download bloqueado: o texto abaixo serve de backup */ }
+    toast("Backup gerado. Se o download não começar, copie o texto.");
+  }
+
+  $("#arquivo").addEventListener("change", function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { $("#json-in").value = String(r.result || ""); toast("Arquivo carregado. Confira e toque em Importar."); };
+    r.onerror = function () { toast("Não consegui ler esse arquivo."); };
+    r.readAsText(f);
+  });
+
+  function importar(btn) {
+    var txt = $("#json-in").value.trim();
+    if (!txt) { toast("Escolha um arquivo ou cole o texto do backup."); return; }
+    var d;
+    try { d = JSON.parse(txt); } catch (e) { toast("Esse texto não é um backup válido (JSON com erro)."); return; }
+    if (!d || !Array.isArray(d.items)) { toast("Esse arquivo não parece um backup do Mercado em Casa."); return; }
+    var novo = N.normalizar(d);
+    novo.exemplo = false;
+    if (!Array.isArray(d.precos)) delete novo.precos; // backup antigo, sem preços: mantém o histórico atual
+    confirmar(btn, "Trocar " + state.items.length + " itens por " + novo.items.length + (motor.info().ativo ? " na casa" : "") + "? Toque de novo", function () {
+      $("#json-in").value = ""; $("#arquivo").value = "";
+      fazer({ t: "tudo", dados: novo });
+      toast(plural(novo.items.length, "item importado", "itens importados"));
+    });
+  }
+
+  // ---------- sincronização em segundo plano ----------
+  // Polling de 1 minuto com a aba visível, mais uma conferida ao voltar para o app.
+  setInterval(function () {
+    if (document.hidden || !motor.info().ativo) return;
+    if (motor.info().pendentes) motor.enviar(); else motor.puxar();
+  }, 60000);
+  document.addEventListener("visibilitychange", function () {
+    var i = motor.info();
+    if (!i.ativo) return;
+    if (document.hidden) { if (i.pendentes) motor.enviar({ keepalive: true }); }
+    else motor.puxar();
+  });
+  window.addEventListener("online", function () { sincronizarAgora(); });
+
+  // ---------- início ----------
+  $("#today").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  $("#c-url").value = conexao.url;
+  $("#c-autor").value = conexao.autor;
+  lerConvite();
+  pronto = true;
+  render();
+  if (motor.info().ativo) sincronizarAgora();
+})();
+</script>
+
+</body>
+</html>
